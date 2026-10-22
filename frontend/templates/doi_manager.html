@@ -1,0 +1,767 @@
+{% extends "base.html" %}
+
+{% block title %}DOI Yönetimi & XML Portalı - Akademik Dergi Portalı{% endblock %}
+
+{% block content %}
+<div class="space-y-8 relative">
+
+    <!-- SİTE İÇİ BİLDİRİM BİLEŞENİ (TOAST / BANNER) -->
+    <div id="site-notification-box" class="hidden fixed top-20 right-6 z-50 max-w-md w-full transition-all duration-300">
+        <div id="site-notification-content" class="p-4 rounded-2xl shadow-2xl border flex items-start space-x-3">
+            <div id="site-notification-icon" class="text-xl shrink-0"></div>
+            <div class="flex-1 text-xs">
+                <div id="site-notification-title" class="font-bold text-sm mb-0.5"></div>
+                <div id="site-notification-message" class="leading-relaxed opacity-90"></div>
+            </div>
+            <button onclick="hideInPageNotification()" class="text-slate-400 hover:text-slate-600 text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- BAŞLIK & AKIŞ KARTI -->
+    <div class="bg-gradient-to-r from-emerald-900 via-slate-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <div class="inline-flex items-center space-x-2 bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 rounded-full text-emerald-300 text-xs font-semibold mb-2">
+                <i class="fa-solid fa-stamp"></i>
+                <span>Crossref Sandbox & Zenodo REST API</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">DOI Lisanslama & Atama Portalı</h1>
+            <p class="text-slate-300 text-sm mt-1 max-w-2xl leading-relaxed">
+                İster <span class="text-amber-300 font-semibold">basit formu doldurarak</span> (sistem arka planda Crossref XML'e dönüştürür), ister hazır <span class="text-emerald-400 font-semibold">Crossref XML dosyası yükleyerek</span> makalelerinize resmi test DOI numarası atayın.
+            </p>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 text-center shrink-0">
+            <div class="text-xs text-slate-400">Mevcut Bakiyeniz</div>
+            <div class="text-3xl font-black text-amber-400 my-1" id="page-token-display">{{ user.token_balance }}</div>
+            <div class="text-[11px] text-slate-400">1 DOI = 1 Kredi</div>
+            <a href="/payment" class="mt-2 block bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold py-1 px-3 rounded-lg transition">
+                + Kredi Al
+            </a>
+        </div>
+    </div>
+
+    <!-- İKİ MOD SEÇİCİ (SEKMELER): 1. FORM İLE HIZLI GİRİŞ | 2. XML YÜKLEME -->
+    <div class="flex flex-wrap gap-3 border-b border-slate-200 pb-3">
+        <button onclick="switchDoiMode('form')" id="btn-mode-form" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>1. Form ile Makale Ekle & DOI Al (XML Bilgisi Gerekmez)</span>
+        </button>
+        <button onclick="switchDoiMode('xml')" id="btn-mode-xml" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2">
+            <i class="fa-solid fa-file-code"></i>
+            <span>2. Crossref XML Dosyası Yükle (Toplu / Gelişmiş)</span>
+        </button>
+    </div>
+
+    <!-- MOD 1: FORM İLE GİRİŞ (KULLANICININ İSTEDİĞİ YENİ SİSTEM) -->
+    <div id="section-form-mode" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-signature text-emerald-600"></i>
+                    <span>Akademik Makale Künyesi Formu</span>
+                </h2>
+                <p class="text-xs text-slate-500">Bilgileri girin; sistemimiz arka planda Crossref Schema 4.4.2 uyumlu XML üreterek DOI atamasını yapacaktır.</p>
+            </div>
+            <button onclick="fillSampleArticleForm()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-magic-wand-sparkles text-emerald-500"></i>
+                <span>Örnek Makale Bilgilerini Doldur</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Sol 2 Kolon: Makale ve Dergi Bilgileri -->
+            <div class="md:col-span-2 space-y-4">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Dergi Adı *</label>
+                        <input type="text" id="f-journal-name" value="Uluslararası Fen ve Mühendislik Araştırmaları Dergisi" placeholder="Derginin tam adı" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">ISSN / e-ISSN</label>
+                        <input type="text" id="f-issn" value="2149-5678" placeholder="Örn: 2149-5678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Makale Başlığı *</label>
+                    <input type="text" id="f-title" placeholder="Araştırma makalesinin tam başlığı" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Yazarlar (Virgülle Ayrılmış) *</label>
+                    <input type="text" id="f-authors" placeholder="Örn: Dr. Zeynep Kaya, Doç. Dr. Mehmet Demir" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Yayın Yılı</label>
+                        <input type="number" id="f-year" value="2026" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Cilt (Volume)</label>
+                        <input type="text" id="f-volume" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Sayı (Issue)</label>
+                        <input type="text" id="f-issue" value="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Sayfa Aralığı</label>
+                        <div class="flex items-center space-x-1">
+                            <input type="text" id="f-fpage" value="101" placeholder="İlk" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-center font-mono">
+                            <span class="text-slate-400">-</span>
+                            <input type="text" id="f-lpage" value="118" placeholder="Son" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-center font-mono">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Özet (Abstract) - İsteğe Bağlı</label>
+                    <textarea id="f-abstract" rows="3" placeholder="Makale özeti..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 leading-relaxed"></textarea>
+                </div>
+            </div>
+
+            <!-- Sağ Kolon: Sağlayıcı ve Atama Butonu -->
+            <div class="space-y-4 flex flex-col justify-between bg-slate-50/80 p-5 rounded-2xl border border-slate-200">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Hedef DOI Sağlayıcısı</label>
+                        <div class="space-y-2">
+                            <label class="border-2 border-emerald-500 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition block" id="form-lbl-crossref">
+                                <input type="radio" name="form_provider" value="crossref_sandbox" checked class="text-emerald-600 focus:ring-emerald-500" onchange="toggleFormProviderUI()">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900">Crossref Sandbox</div>
+                                    <div class="text-[10px] text-slate-500">Resmi 10.55555/... Testbed</div>
+                                </div>
+                            </label>
+                            <label class="border border-slate-200 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition block" id="form-lbl-zenodo">
+                                <input type="radio" name="form_provider" value="zenodo" class="text-sky-600 focus:ring-sky-500" onchange="toggleFormProviderUI()">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900">Zenodo REST API</div>
+                                    <div class="text-[10px] text-slate-500">CERN 10.5072/zenodo...</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl space-y-1">
+                        <div class="font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-wand-magic"></i>
+                            <span>Otomatik XML Dönüşümü</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed">
+                            Formu gönderdiğinizde sistemimiz bilgileri Crossref Schema 4.4.2 XML standardına dönüştürür ve seçili API'ye ileterek DOI üretir.
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="submitArticleFormToDoi()" id="btn-form-to-doi" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3.5 rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-stamp text-sm"></i>
+                    <span>Formu Doğrula, XML'e Çevir ve DOI Al</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MOD 2: XML DOSYASI YÜKLEME VE TOPLU ATAMA -->
+    <div id="section-xml-mode" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- KOLON 1: XML DOSYASI YÜKLE VE DOĞRULA -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-arrow-up text-sky-600"></i>
+                        <span>Crossref XML Dosyası Yükle</span>
+                    </h2>
+                    <p class="text-xs text-slate-500">Hazır XML dosyanızı yükleyin; sistem şemayı ve eksik bilgileri denetlesin.</p>
+                </div>
+                <button onclick="loadSampleXml()" class="text-xs font-bold text-sky-600 hover:text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg">
+                    Örnek XML Yükle
+                </button>
+            </div>
+
+            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-sky-500 transition cursor-pointer bg-slate-50/50" onclick="document.getElementById('xml-file-input').click()">
+                <input type="file" id="xml-file-input" accept=".xml" class="hidden" onchange="handleXmlUpload(event)">
+                <div class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-file-code"></i>
+                </div>
+                <div class="text-xs font-bold text-slate-800">XML Dosyasını Buraya Sürükleyin veya Seçin</div>
+                <div class="text-[11px] text-slate-400 mt-1">Crossref Schema 4.4.2 uyumlu .xml dosyaları</div>
+            </div>
+
+            <!-- XML DOĞRULAMA ÇIKTISI -->
+            <div id="xml-validation-box" class="hidden space-y-4">
+                <div id="xml-status-badge" class="p-3 rounded-xl border text-xs font-bold flex items-center space-x-2"></div>
+                <div id="xml-parsed-details" class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- KOLON 2: XML MODU SAĞLAYICI SEÇİMİ -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-network-wired text-emerald-600"></i>
+                    <span>DOI Sağlayıcı & API Ayarları</span>
+                </h2>
+                <p class="text-xs text-slate-500">Hocanızın ses kaydında bahsettiği 2 alternatif test API'si.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Hedef DOI Sağlayıcısı</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="border-2 border-emerald-500 bg-emerald-50/30 rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition" id="lbl-crossref">
+                            <input type="radio" name="provider_opt" value="crossref_sandbox" checked class="text-emerald-600 focus:ring-emerald-500" onchange="toggleProviderUI()">
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">Crossref Sandbox</div>
+                                <div class="text-[10px] text-slate-500">Resmi Crossref Testbed</div>
+                            </div>
+                        </label>
+                        <label class="border border-slate-200 rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition" id="lbl-zenodo">
+                            <input type="radio" name="provider_opt" value="zenodo" class="text-sky-600 focus:ring-sky-500" onchange="toggleProviderUI()">
+                            <div>
+                                <div class="text-xs font-bold text-slate-900">Zenodo REST API</div>
+                                <div class="text-[10px] text-slate-500">CERN Sandbox Test DOI</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="zenodo-token-box" class="hidden">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Zenodo Sandbox Access Token</label>
+                    <input type="text" id="zenodo-token" placeholder="Canlı API testi için personal token (boş bırakılırsa simüle edilir)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAKALELER LİSTESİ VE ÖN İZLEME TABLOSU -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check text-indigo-600"></i>
+                    <span>Tescil Edilen ve Bekleyen Makaleler</span>
+                </h2>
+                <p class="text-xs text-slate-500">Sistemde kayıtlı makaleler ve atanan DOI durumları.</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-3.5">ID</th>
+                        <th class="px-6 py-3.5">Makale Başlığı & Dergi</th>
+                        <th class="px-6 py-3.5">Yazarlar</th>
+                        <th class="px-6 py-3.5">Yıl/Cilt/Sayı</th>
+                        <th class="px-6 py-3.5">Atanan DOI</th>
+                        <th class="px-6 py-3.5 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700" id="articles-table-body">
+                    {% for art in articles %}
+                    <tr class="hover:bg-slate-50/50" id="row-art-{{ art.id }}">
+                        <td class="px-6 py-4 font-mono font-bold text-slate-400">#{{ art.id }}</td>
+                        <td class="px-6 py-4 max-w-sm">
+                            <div class="font-bold text-slate-900">{{ art.title }}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">{{ art.journal.name }} (ISSN: {{ art.journal.issn }})</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600 max-w-xs">{{ art.authors }}</td>
+                        <td class="px-6 py-4 font-mono text-slate-600">{{ art.publication_year }} / V.{{ art.volume }} (N.{{ art.issue }})</td>
+                        <td class="px-6 py-4 font-mono">
+                            {% if art.doi_number %}
+                            <div class="flex items-center space-x-1.5 text-emerald-600 font-bold">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <a href="https://doi.org/{{ art.doi_number }}" target="_blank" class="hover:underline">{{ art.doi_number }}</a>
+                            </div>
+                            {% else %}
+                            <span class="text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                DOI Bekliyor
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            {% if art.doi_number %}
+                            <button onclick="showCertificateModal('{{ art.title }}', '{{ art.doi_number }}', '{{ art.authors }}', '{{ art.journal.name }}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ml-auto">
+                                <i class="fa-solid fa-certificate text-sky-600 mr-1"></i> Tescil Belgesi
+                            </button>
+                            {% else %}
+                            <button onclick="assignSingleDoi({{ art.id }})" class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 ml-auto">
+                                <i class="fa-solid fa-stamp text-[11px]"></i>
+                                <span>DOI Al</span>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">Henüz kayıtlı makale yok.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- TESCİL SERTİFİKASI MODALI -->
+<div id="cert-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-slate-200 relative">
+        <button onclick="closeCertModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="text-center space-y-2 border-b border-slate-100 pb-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-award"></i>
+            </div>
+            <h3 class="text-lg font-black text-slate-900">Uluslararası DOI Tescil Belgesi</h3>
+            <p class="text-xs text-slate-500">Dijital Nesne Tanımlayıcı Kayıt Özeti</p>
+        </div>
+
+        <div class="space-y-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+                <span class="text-slate-400 block text-[10px] uppercase font-bold">Makale Başlığı</span>
+                <span id="cert-title" class="font-bold text-slate-900 text-sm"></span>
+            </div>
+            <div>
+                <span class="text-slate-400 block text-[10px] uppercase font-bold">Yazarlar</span>
+                <span id="cert-authors" class="font-medium text-slate-700"></span>
+            </div>
+            <div>
+                <span class="text-slate-400 block text-[10px] uppercase font-bold">Yayınlandığı Dergi</span>
+                <span id="cert-journal" class="font-medium text-slate-700"></span>
+            </div>
+            <div class="pt-2 border-t border-slate-200 flex justify-between items-center">
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Atanan Kalıcı DOI</span>
+                    <span id="cert-doi" class="font-mono font-bold text-emerald-600 text-sm"></span>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] text-slate-400 block uppercase font-bold">Kayıt Durumu</span>
+                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">ONAYLANDI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+            <button onclick="closeCertModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition">
+                Kapat
+            </button>
+            <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-print"></i>
+                <span>Yazdır / PDF Kaydet</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let lastUploadedXmlContent = "";
+
+// SİTE İÇİ BİLDİRİM FONKSİYONU (ALERT YERİNE)
+function showInPageNotification(message, type = "info", title = "") {
+    const box = document.getElementById('site-notification-box');
+    const content = document.getElementById('site-notification-content');
+    const icon = document.getElementById('site-notification-icon');
+    const titleEl = document.getElementById('site-notification-title');
+    const msgEl = document.getElementById('site-notification-message');
+
+    titleEl.innerText = title || (type === "success" ? "Başarılı İşlem" : (type === "error" ? "İşlem Hatası" : "Bilgilendirme"));
+    msgEl.innerText = message;
+
+    if (type === "success") {
+        content.className = "p-4 rounded-2xl shadow-2xl border border-emerald-200 bg-emerald-50 text-emerald-900 flex items-start space-x-3";
+        icon.className = "fa-solid fa-circle-check text-emerald-600 text-xl shrink-0";
+    } else if (type === "error") {
+        content.className = "p-4 rounded-2xl shadow-2xl border border-rose-200 bg-rose-50 text-rose-900 flex items-start space-x-3";
+        icon.className = "fa-solid fa-circle-xmark text-rose-600 text-xl shrink-0";
+    } else {
+        content.className = "p-4 rounded-2xl shadow-2xl border border-sky-200 bg-sky-50 text-sky-900 flex items-start space-x-3";
+        icon.className = "fa-solid fa-circle-info text-sky-600 text-xl shrink-0";
+    }
+
+    box.classList.remove('hidden');
+    setTimeout(() => {
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+
+    // Otomatik kapanma (8 saniye)
+    setTimeout(() => {
+        hideInPageNotification();
+    }, 8000);
+}
+
+function hideInPageNotification() {
+    document.getElementById('site-notification-box').classList.add('hidden');
+}
+
+// MOD GEÇİŞİ (FORM VS XML)
+function switchDoiMode(mode) {
+    const secForm = document.getElementById('section-form-mode');
+    const secXml = document.getElementById('section-xml-mode');
+    const btnForm = document.getElementById('btn-mode-form');
+    const btnXml = document.getElementById('btn-mode-xml');
+
+    if (mode === 'form') {
+        secForm.classList.remove('hidden');
+        secXml.classList.add('hidden');
+        btnForm.className = "bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2";
+        btnXml.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2";
+    } else {
+        secForm.classList.add('hidden');
+        secXml.classList.remove('hidden');
+        btnXml.className = "bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2";
+        btnForm.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2";
+    }
+}
+
+function toggleFormProviderUI() {
+    const prov = document.querySelector('input[name="form_provider"]:checked').value;
+    const lblC = document.getElementById('form-lbl-crossref');
+    const lblZ = document.getElementById('form-lbl-zenodo');
+    if (prov === 'zenodo') {
+        lblZ.className = "border-2 border-sky-500 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition block";
+        lblC.className = "border border-slate-200 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition block";
+    } else {
+        lblC.className = "border-2 border-emerald-500 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition block";
+        lblZ.className = "border border-slate-200 bg-white rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition block";
+    }
+}
+
+function toggleProviderUI() {
+    const provider = document.querySelector('input[name="provider_opt"]:checked').value;
+    const tokenBox = document.getElementById('zenodo-token-box');
+    const lblCrossref = document.getElementById('lbl-crossref');
+    const lblZenodo = document.getElementById('lbl-zenodo');
+
+    if (provider === 'zenodo') {
+        tokenBox.classList.remove('hidden');
+        lblZenodo.className = "border-2 border-sky-500 bg-sky-50/30 rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition";
+        lblCrossref.className = "border border-slate-200 rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition";
+    } else {
+        tokenBox.classList.add('hidden');
+        lblCrossref.className = "border-2 border-emerald-500 bg-emerald-50/30 rounded-xl p-3 cursor-pointer flex items-center space-x-3 transition";
+        lblZenodo.className = "border border-slate-200 rounded-xl p-3 cursor-pointer flex items-center space-x-3 hover:bg-slate-50 transition";
+    }
+}
+
+function fillSampleArticleForm() {
+    document.getElementById('f-journal-name').value = "Uluslararası Fen ve Mühendislik Araştırmaları Dergisi";
+    document.getElementById('f-issn').value = "2149-5678";
+    document.getElementById('f-title').value = "Büyük Dil Modelleri ile Otomatik Akademik Hakemlik ve DOI Tescili";
+    document.getElementById('f-authors').value = "Doç. Dr. Zeynep Kaya, Prof. Dr. Ahmet Yılmaz";
+    document.getElementById('f-year').value = "2026";
+    document.getElementById('f-volume').value = "12";
+    document.getElementById('f-issue').value = "2";
+    document.getElementById('f-fpage').value = "136";
+    document.getElementById('f-lpage').value = "152";
+    document.getElementById('f-abstract').value = "Bu çalışmada modern doğal dil işleme algoritmaları ve Crossref XML entegrasyonu incelenmiştir.";
+    showInPageNotification("Örnek makale künye bilgileri forma dolduruldu. Şimdi 'Formu Doğrula ve DOI Al' butonuna basabilirsiniz.", "info", "Form Dolduruldu");
+}
+
+// FORM İLE DOI ALMA (XML OLUŞTURUCU ENTEGRASYON)
+async function submitArticleFormToDoi() {
+    const journalName = document.getElementById('f-journal-name').value.trim();
+    const issn = document.getElementById('f-issn').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    const authors = document.getElementById('f-authors').value.trim();
+    const year = parseInt(document.getElementById('f-year').value) || 2026;
+    const vol = document.getElementById('f-volume').value.trim();
+    const issue = document.getElementById('f-issue').value.trim();
+    const fpage = document.getElementById('f-fpage').value.trim();
+    const lpage = document.getElementById('f-lpage').value.trim();
+    const abstract = document.getElementById('f-abstract').value.trim();
+    const provider = document.querySelector('input[name="form_provider"]:checked').value;
+
+    if (!journalName || !title || !authors) {
+        showInPageNotification("Lütfen zorunlu alanları (Dergi Adı, Makale Başlığı ve Yazarlar) doldurunuz.", "error", "Eksik Alan");
+        return;
+    }
+
+    const btn = document.getElementById('btn-form-to-doi');
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Form XML'e Dönüştürülüyor ve DOI Alınıyor...</span>`;
+
+    try {
+        const response = await fetch('/api/article/form-to-doi', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                journal_name: journalName,
+                issn: issn,
+                title: title,
+                authors: authors,
+                publication_year: year,
+                volume: vol,
+                issue: issue,
+                first_page: fpage,
+                last_page: lpage,
+                abstract: abstract,
+                provider: provider
+            })
+        });
+
+        let data;
+        const textResp = await response.text();
+        try {
+            data = JSON.parse(textResp);
+        } catch(e) {
+            throw new Error(textResp || "Sunucudan geçersiz yanıt alındı.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data.detail || "İşlem sırasında hata oluştu.");
+        }
+
+        showInPageNotification(`Tebrikler! Makale için başarıyla DOI üretildi: ${data.doi} (Kalan Bakiye: ${data.remaining_tokens} Kredi)`, "success", "DOI Tescillendi");
+        showCertificateModal(title, data.doi, authors, journalName);
+        setTimeout(() => { window.location.reload(); }, 3500);
+
+    } catch (err) {
+        showInPageNotification(err.message, "error", "İşlem Başarısız");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-stamp text-sm"></i> <span>Formu Doğrula, XML'e Çevir ve DOI Al</span>`;
+    }
+}
+
+// XML DOSYASI İŞLEMLERİ
+async function handleXmlUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    lastUploadedXmlContent = text;
+
+    const formData = new FormData();
+    formData.append('xml_file', file);
+
+    try {
+        const response = await fetch('/api/xml/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        renderXmlValidation(data);
+    } catch (err) {
+        showInPageNotification("XML işlenirken hata: " + err.message, "error");
+    }
+}
+
+function loadSampleXml() {
+    const sampleXml = `<?xml version="1.0" encoding="UTF-8"?>
+<doi_batch version="4.4.2" xmlns="http://www.crossref.org/schema/4.4.2">
+  <head>
+    <doi_batch_id>BATCH_DEMO_2026</doi_batch_id>
+    <timestamp>1741234567</timestamp>
+    <depositor>
+      <depositor_name>Akademik Dergi Editörlüğü</depositor_name>
+      <email_address>editor@dergi.org</email_address>
+    </depositor>
+    <registrant>Akademik Yayıncılık</registrant>
+  </head>
+  <body>
+    <journal>
+      <journal_metadata>
+        <full_title>Uluslararası Fen ve Mühendislik Araştırmaları Dergisi</full_title>
+        <issn media_type="electronic">2149-5678</issn>
+      </journal_metadata>
+      <journal_issue>
+        <publication_date media_type="online"><year>2026</year></publication_date>
+        <journal_volume><volume>12</volume></journal_volume>
+        <issue>2</issue>
+      </journal_issue>
+      <journal_article publication_type="full_text">
+        <titles><title>Yapay Zeka Destekli Akademik Denetim Sistemleri</title></titles>
+        <contributors>
+          <person_name contributor_role="author" sequence="first">
+            <given_name>Zeynep</given_name><surname>Kaya</surname>
+          </person_name>
+        </contributors>
+        <publication_date media_type="online"><year>2026</year></publication_date>
+        <pages><first_page>101</first_page><last_page>118</last_page></pages>
+        <doi_data>
+          <doi>10.55555/ufmad.2026.12.2.001</doi>
+          <resource>https://dergipark.org.tr/article/1</resource>
+        </doi_data>
+      </journal_article>
+    </journal>
+  </body>
+</doi_batch>`;
+
+    lastUploadedXmlContent = sampleXml;
+    const blob = new Blob([sampleXml], { type: 'application/xml' });
+    const file = new File([blob], "crossref_sample.xml", { type: 'application/xml' });
+
+    const dT = new DataTransfer();
+    dT.items.add(file);
+    document.getElementById('xml-file-input').files = dT.files;
+
+    handleXmlUpload({ target: { files: [file] } });
+    showInPageNotification("Örnek Crossref Schema 4.4.2 XML dosyası yüklendi ve doğrulandı.", "success", "XML Yüklendi");
+}
+
+function renderXmlValidation(data) {
+    const box = document.getElementById('xml-validation-box');
+    const badge = document.getElementById('xml-status-badge');
+    const details = document.getElementById('xml-parsed-details');
+
+    box.classList.remove('hidden');
+
+    if (data.is_valid) {
+        badge.className = "p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center space-x-2";
+        badge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> <span>XML Şeması ve Zorunlu Alanlar Doğrulandı (${data.article_count} Makale Bulundu)</span>`;
+    } else {
+        badge.className = "p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-bold flex items-center space-x-2";
+        badge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-600 text-sm"></i> <span>XML İçinde Eksik veya Hatalı Alanlar Var</span>`;
+    }
+
+    const p = data.parsed_data;
+    const articles = p.articles || [];
+
+    let articlesPreviewHtml = articles.map((art, idx) => `
+        <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-xs space-y-1">
+            <div class="font-bold text-slate-900">${idx + 1}. ${art.title}</div>
+            <div class="text-[11px] text-slate-500">Yazarlar: <span class="font-medium text-slate-700">${(art.authors || []).join(', ')}</span></div>
+            <div class="text-[10px] text-slate-400 font-mono">Yıl: ${art.year || p.publication_year || '-'} | Sayfa: ${art.first_page || '1'}-${art.last_page || '10'}</div>
+        </div>
+    `).join('');
+
+    details.innerHTML = `
+        <div class="grid grid-cols-2 gap-2">
+            <div><span class="text-slate-400">Dergi Başlığı:</span> <span class="font-bold text-slate-800">${p.journal_title || 'Yok'}</span></div>
+            <div><span class="text-slate-400">ISSN:</span> <span class="font-mono text-slate-800">${p.issn || 'Yok'}</span></div>
+            <div><span class="text-slate-400">Depositor:</span> <span class="font-slate-800">${p.depositor_email || 'Yok'}</span></div>
+            <div><span class="text-slate-400">Cilt / Sayı:</span> <span class="font-mono text-slate-800">V.${p.volume || '-'} / N.${p.issue || '-'} (${p.publication_year || '-'})</span></div>
+        </div>
+
+        <div class="mt-3 pt-2 border-t border-slate-200">
+            <span class="text-xs font-bold text-slate-700 block mb-1.5">Ön İzleme: XML İçindeki Makaleler</span>
+            <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                ${articlesPreviewHtml}
+            </div>
+        </div>
+
+        ${data.is_valid ? `
+        <div class="mt-4 pt-3 border-t border-slate-200">
+            <button onclick="assignDoiFromLoadedXml()" id="btn-assign-xml-doi" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-stamp text-sm"></i>
+                <span>Bu XML'deki ${articles.length} Makale İçin Doğrudan DOI Al & Tescille</span>
+            </button>
+        </div>` : ''}
+
+        ${data.errors.length > 0 ? `
+        <div class="mt-2 pt-2 border-t border-rose-100 text-rose-700">
+            <span class="font-bold">Eksiklikler:</span>
+            <ul class="list-disc list-inside mt-1 text-[11px]">
+                ${data.errors.map(e => `<li>${e}</li>`).join('')}
+            </ul>
+        </div>` : ''}
+    `;
+}
+
+async function assignDoiFromLoadedXml() {
+    if (!lastUploadedXmlContent) {
+        showInPageNotification("Lütfen önce bir XML dosyası seçiniz veya 'Örnek XML Yükle' butonuna basınız.", "error");
+        return;
+    }
+
+    const provider = document.querySelector('input[name="provider_opt"]:checked').value;
+    const token = document.getElementById('zenodo-token').value.trim() || null;
+    const btn = document.getElementById('btn-assign-xml-doi');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>DOI Üretiliyor ve Sunucuya İletiliyor...</span>`;
+    }
+
+    try {
+        const response = await fetch('/api/xml/import-and-assign', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                xml_content: lastUploadedXmlContent,
+                provider: provider,
+                zenodo_token: token
+            })
+        });
+
+        let data;
+        const textResp = await response.text();
+        try {
+            data = JSON.parse(textResp);
+        } catch(e) {
+            throw new Error(textResp || "Sunucudan geçersiz yanıt alındı.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data.detail || "DOI alma işlemi başarısız.");
+        }
+
+        const firstDoi = data.assigned_articles[0]?.doi || "";
+        showInPageNotification(`Tebrikler! ${data.message} Atanan DOI: ${firstDoi}`, "success", "DOI Üretildi");
+        setTimeout(() => { window.location.reload(); }, 2000);
+    } catch (err) {
+        showInPageNotification(err.message, "error", "Hata Oluştu");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-stamp text-sm"></i> <span>Yeniden Dene</span>`;
+        }
+    }
+}
+
+async function assignSingleDoi(articleId) {
+    const provider = "crossref_sandbox";
+    try {
+        const response = await fetch('/api/doi/assign', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                article_id: articleId,
+                provider: provider
+            })
+        });
+
+        let data;
+        const textResp = await response.text();
+        try {
+            data = JSON.parse(textResp);
+        } catch(e) {
+            throw new Error(textResp || "Sunucudan geçersiz yanıt alındı.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data.detail || "DOI atama başarısız.");
+        }
+
+        showInPageNotification(`Tebrikler! DOI başarıyla üretildi: ${data.doi} (Kalan: ${data.remaining_tokens} Kredi)`, "success");
+        setTimeout(() => { window.location.reload(); }, 2000);
+    } catch (err) {
+        showInPageNotification(err.message, "error");
+    }
+}
+
+function showCertificateModal(title, doi, authors, journal) {
+    document.getElementById('cert-title').innerText = title;
+    document.getElementById('cert-doi').innerText = doi;
+    document.getElementById('cert-authors').innerText = authors;
+    document.getElementById('cert-journal').innerText = journal;
+    document.getElementById('cert-modal').classList.remove('hidden');
+}
+
+function closeCertModal() {
+    document.getElementById('cert-modal').classList.add('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Kontrol Paneli - Akademik Dergi Portalı{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- BAŞLIK & HOŞ GELDİN ALANI -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+            <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="relative z-10 max-w-3xl">
+            <div class="inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 rounded-full text-indigo-300 text-xs font-medium mb-3">
+                <i class="fa-solid fa-sparkles"></i>
+                <span>Yapay Zeka Destekli Akademik Karar Destek Sistemi</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Hoş Geldiniz, {{ user.name }}</h1>
+            <p class="mt-2 text-slate-300 text-sm leading-relaxed">
+                Bu portal üzerinden dergilerinizin <span class="text-amber-300 font-semibold">DOAJ, TR Dizin, Scopus, Web of Science ve Copernicus</span> kriterlerine uygunluğunu semantik NLP ile denetleyebilir, Crossref uyumlu XML üretebilir ve <span class="text-emerald-300 font-semibold">Crossref / Zenodo</span> üzerinden resmi test DOI'si atayabilirsiniz.
+            </p>
+            <div class="mt-5 flex flex-wrap gap-3">
+                <a href="/evaluate" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition flex items-center space-x-2">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    <span>Yeni İndeks Denetimi Yap</span>
+                </a>
+                <a href="/doi" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition flex items-center space-x-2">
+                    <i class="fa-solid fa-file-code"></i>
+                    <span>XML Yükle & DOI Al</span>
+                </a>
+                <a href="/payment" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-coins text-amber-400"></i>
+                    <span>Bakiye: {{ user.token_balance }} Kredi</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- İSTATİSTİK KARTLARI -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-book-journal-whills"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Kayıtlı Dergiler</div>
+                <div class="text-2xl font-bold text-slate-900 mt-0.5">{{ journals|length }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-stamp"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Tescilli DOI</div>
+                <div class="text-2xl font-bold text-emerald-600 mt-0.5">{{ registered_doi_count }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">Bekleyen Makale</div>
+                <div class="text-2xl font-bold text-amber-600 mt-0.5">{{ pending_doi_count }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-500 uppercase tracking-wider">DOI Bakiyesi</div>
+                <div class="text-2xl font-bold text-purple-600 mt-0.5">{{ user.token_balance }} Token</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DERGİLERİM & MAKALE TABLOLARI -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- DERGİ LİSTESİ (2 KOLON) -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open text-sky-600"></i>
+                        <span>Kayıtlı Dergilerim</span>
+                    </h2>
+                    <a href="/evaluate" class="text-xs font-semibold text-sky-600 hover:text-sky-700">
+                        + Denetim Başlat
+                    </a>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for journal in journals %}
+                    <div class="p-6 hover:bg-slate-50/50 transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-base">{{ journal.name }}</h3>
+                                <div class="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+                                    <span class="bg-slate-100 px-2 py-0.5 rounded font-mono">ISSN: {{ journal.issn or 'Belirtilmedi' }}</span>
+                                    <span class="bg-sky-50 text-sky-700 px-2 py-0.5 rounded font-mono">Prefix: {{ journal.doi_prefix }}</span>
+                                    <span class="bg-slate-100 px-2 py-0.5 rounded">{{ journal.publisher }}</span>
+                                </div>
+                                <p class="mt-2 text-xs text-slate-600 line-clamp-2">{{ journal.description }}</p>
+                            </div>
+                            <div class="flex sm:flex-col gap-2 shrink-0">
+                                <a href="/evaluate" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition text-center flex items-center justify-center space-x-1">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i>
+                                    <span>İndeks Analizi</span>
+                                </a>
+                                <form action="/api/xml/generate" method="post" target="_blank">
+                                    <input type="hidden" name="journal_id" value="{{ journal.id }}">
+                                    <button type="submit" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition text-center flex items-center justify-center space-x-1">
+                                        <i class="fa-solid fa-code text-slate-500"></i>
+                                        <span>XML Üret</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-8 text-center text-slate-400 text-sm">
+                        Henüz kayıtlı bir derginiz bulunmamaktadır.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- MAKALE VE DOI LİSTESİ -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-newspaper text-emerald-600"></i>
+                        <span>Son Makaleler ve DOI Durumları</span>
+                    </h2>
+                    <a href="/doi" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                        Tümünü Yönet &rarr;
+                    </a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-3">Makale Başlığı</th>
+                                <th class="px-6 py-3">Yazarlar</th>
+                                <th class="px-6 py-3">Cilt/Sayı</th>
+                                <th class="px-6 py-3">DOI Numarası</th>
+                                <th class="px-6 py-3">Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            {% for art in articles[:5] %}
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="px-6 py-3.5 font-medium text-slate-900 max-w-xs truncate">{{ art.title }}</td>
+                                <td class="px-6 py-3.5 text-slate-500 max-w-[140px] truncate">{{ art.authors }}</td>
+                                <td class="px-6 py-3.5 font-mono">V.{{ art.volume }} / N.{{ art.issue }}</td>
+                                <td class="px-6 py-3.5 font-mono">
+                                    {% if art.doi_number %}
+                                    <span class="text-emerald-600 font-semibold">{{ art.doi_number }}</span>
+                                    {% else %}
+                                    <span class="text-slate-400 italic">Henüz Atanmadı</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-3.5">
+                                    {% if art.status == 'registered' %}
+                                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                        <i class="fa-solid fa-check mr-0.5"></i> AKTİF
+                                    </span>
+                                    {% else %}
+                                    <span class="bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                        <i class="fa-solid fa-clock mr-0.5"></i> BEKLİYOR
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-6 text-center text-slate-400">Henüz makale kaydı bulunmuyor.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ SÜTUN: DESTEKLENEN İNDEKSLER VE HIZLI BİLGİ -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group text-indigo-600"></i>
+                    <span>Desteklenen 5 Büyük İndeks</span>
+                </h3>
+                <div class="space-y-3">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 font-bold text-xs flex items-center justify-center shrink-0">D</div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">DOAJ</div>
+                            <div class="text-[11px] text-slate-500">Açık erişim, CC lisansı, min. 5 makale, telif hakkı.</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-red-100 text-red-600 font-bold text-xs flex items-center justify-center shrink-0">TR</div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">TR Dizin (TÜBİTAK)</div>
+                            <div class="text-[11px] text-slate-500">Etik kurul izni, çift kör hakemlik, yılda 2 sayı.</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0">S</div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">Scopus (Elsevier)</div>
+                            <div class="text-[11px] text-slate-500">COPE yayın etiği, uluslararası kurul, düzenlilik.</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 font-bold text-xs flex items-center justify-center shrink-0">W</div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">Web of Science</div>
+                            <div class="text-[11px] text-slate-500">Clarivate 24 kalite kriteri, zorunlu DOI ve ORCID.</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-600 font-bold text-xs flex items-center justify-center shrink-0">IC</div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">Index Copernicus</div>
+                            <div class="text-[11px] text-slate-500">Dijital arşiv, çevrimiçi makale takip ve mizanpaj.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-slate-100">
+                    <a href="/evaluate" class="w-full block bg-slate-900 hover:bg-slate-800 text-white text-center py-2 rounded-xl text-xs font-bold transition">
+                        Semantik NLP ile Kriterleri Test Et &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

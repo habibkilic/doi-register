@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}İndeks Uygunluk & NLP Denetimi - Akademik Dergi Portalı{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- BAŞLIK -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full text-amber-600 text-xs font-semibold mb-2">
+                <i class="fa-solid fa-brain"></i>
+                <span>NLP Semantik Paragraf ve Kriter Analizi</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Akademik Dergi İndeks Denetim Motoru</h1>
+            <p class="text-slate-500 text-sm mt-1">
+                Derginizin web sitesi politikasını ve metinlerini 5 büyük indeksin (DOAJ, TR Dizin, Scopus, Web of Science, Copernicus) kurallarına göre anlamsal olarak denetleyin.
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="loadSampleSuccessText()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                <span>Örnek Uygun Metin Yükle</span>
+            </button>
+            <button onclick="loadSampleFaultyText()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                <span>Örnek Kusurlu Metin</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- GİRİŞ FORMU -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Dergi Seçimi -->
+            <div>
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Hedef Dergi</label>
+                <select id="journal-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    {% for journal in journals %}
+                    <option value="{{ journal.id }}">{{ journal.name }} (ISSN: {{ journal.issn }})</option>
+                    {% else %}
+                    <option value="">Kayıtlı Dergi Yok (Genel Analiz)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- İncelenecek İndeksler (Checkboxes) -->
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Denetlenecek İndeksler</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-100 transition">
+                        <input type="checkbox" name="index_opt" value="DOAJ" checked class="rounded text-sky-600 focus:ring-sky-500">
+                        <span>DOAJ</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-100 transition">
+                        <input type="checkbox" name="index_opt" value="TR_DIZIN" checked class="rounded text-sky-600 focus:ring-sky-500">
+                        <span>TR Dizin</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-100 transition">
+                        <input type="checkbox" name="index_opt" value="SCOPUS" checked class="rounded text-sky-600 focus:ring-sky-500">
+                        <span>Scopus</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-100 transition">
+                        <input type="checkbox" name="index_opt" value="WEB_OF_SCIENCE" checked class="rounded text-sky-600 focus:ring-sky-500">
+                        <span>Web of Science</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-100 transition">
+                        <input type="checkbox" name="index_opt" value="COPERNICUS" checked class="rounded text-sky-600 focus:ring-sky-500">
+                        <span>Copernicus</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metin Giriş Alanı -->
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold uppercase text-slate-500">
+                    Dergi Politikası, Hakkında ve Yayın İlkeleri Metni
+                </label>
+                <span class="text-xs text-slate-400">NLP modeli paragrafları otomatik parçalayacaktır.</span>
+            </div>
+            <textarea id="journal-text" rows="8" placeholder="Derginizin açık erişim bildirimi, hakemlik süreci, etik kuralları, yayın periyodu ve yazar telif hakları ile ilgili metinleri buraya yapıştırınız..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-sky-500 leading-relaxed"></textarea>
+        </div>
+
+        <!-- Buton -->
+        <div class="flex justify-end">
+            <button id="btn-analyze" onclick="runAnalysis()" class="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-sky-500/20 transition flex items-center space-x-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Semantik NLP ile Kriterleri Puanla</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- YÜKLENİYOR DURUMU -->
+    <div id="loading-spinner" class="hidden bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
+        <div class="inline-block animate-spin text-sky-600 text-4xl">
+            <i class="fa-solid fa-circle-notch"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Paragraflar ve Kriterler NLP ile İnceleniyor...</h3>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">
+            Metin semantik vektörlere dönüştürülüyor, DOAJ, TR Dizin, Scopus, WoS ve Copernicus kuralları ile eşleştiriliyor.
+        </p>
+    </div>
+
+    <!-- ANALİZ SONUÇLARI ALANI -->
+    <div id="results-container" class="hidden space-y-8">
+        
+        <!-- ÜST SKOR KARTLARI & RADAR GRAFİĞİ -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- SKOR KARTLARI -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">İndeks Uygunluk Puanları</h2>
+                        <p class="text-xs text-slate-500">Her indeks için hesaplanan ağırlıklı başarı yüzdesi.</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400">Ortalama Başarı</div>
+                        <div id="avg-score-badge" class="text-2xl font-black text-sky-600">0%</div>
+                    </div>
+                </div>
+
+                <!-- 5 İndeksin İlerleme Çubukları -->
+                <div id="index-scores-bars" class="space-y-4">
+                    <!-- Dinamik olarak JS ile doldurulacak -->
+                </div>
+            </div>
+
+            <!-- RADAR GRAFİĞİ -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 flex flex-col items-center justify-center">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">
+                    5 İndeks Karşılaştırma Radarı
+                </h3>
+                <div class="w-full max-w-[280px] aspect-square">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- DETAYLI KRİTER SEKMELERİ (TABS) -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="border-b border-slate-100 bg-slate-50 px-6 py-3 flex flex-wrap gap-2" id="index-tabs-header">
+                <!-- Sekme butonları JS ile eklenecek -->
+            </div>
+
+            <div class="p-6" id="index-tabs-content">
+                <!-- Sekme içerikleri JS ile eklenecek -->
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let radarChartInstance = null;
+let currentResults = null;
+
+const sampleSuccessText = `Bu dergi açık erişimli ve hakemli uluslararası bir bilimsel dergidir. Budapeşte Açık Erişim Girişimi (BOAI) prensiplerini benimser. Tüm makaleler kullanıcılara ve kurumlara ücretsiz olarak tam metin sunulmaktadır.
+Tüm yayınlanan çalışmalar Creative Commons Alıntı 4.0 Uluslararası (CC BY 4.0) Lisansı ile lisanslanmıştır. Yazarlar telif hakkını herhangi bir kısıtlama olmaksızın ellerinde tutarlar ve ilk yayın hakkını dergiye devrederler.
+Dergimize gönderilen makaleler çift taraflı körleme (double-blind) hakemlik sürecine tabi tutulur. Yazar ve hakem kimlikleri süreç boyunca gizli tutulur ve en az iki bağımsız hakem atanır.
+İnsan ve hayvan denekleri içeren araştırmalarda yetkili bir üniversite veya kurum Etik Kurulundan alınmış Onay Belgesi (tarih ve karar numarasıyla) makalede beyan edilmelidir. Dergimiz Yayın Etiği Komitesi (COPE) tarafından belirlenen ilkelere tam uyumludur.
+Aday makaleler iThenticate ve Turnitin yazılımları ile intihal taramasına tabi tutulur. Kaynakça hariç benzerlik oranı %15'in altında olmalıdır.
+Dergimiz makale gönderme, değerlendirme veya basım için yazarlardan hiçbir aşamada ücret (APC) talep etmemektedir.
+Dergimiz yılda iki sayı (Haziran ve Aralık) olmak üzere düzenli yayın periyoduna sahiptir. Yayınlanan tüm makaleler kalıcı Crossref DOI numarasına (10.55555) sahiptir ve LOCKSS ile arşivlenmektedir.`;
+
+const sampleFaultyText = `Bizim dergimiz çeşitli alanlarda makaleler yayınlar. Makalenizi bize e-posta ile gönderebilirsiniz. Editörümüz uygun bulursa makalenizi yayınlarız.
+Yayınlanan makalelerin telif hakkı tamamen dergi yönetimine geçer, yazar başka bir yerde kullanamaz.
+Yayın ücreti olarak sayfa başına 500 TL alınmaktadır.
+Hakem değerlendirmesi bazen yapılmakta, bazen yayın kurulu doğrudan karar vermektedir.`;
+
+function loadSampleSuccessText() {
+    document.getElementById('journal-text').value = sampleSuccessText;
+}
+
+function loadSampleFaultyText() {
+    document.getElementById('journal-text').value = sampleFaultyText;
+}
+
+async function runAnalysis() {
+    const rawText = document.getElementById('journal-text').value.trim();
+    if (!rawText) {
+        alert("Lütfen denetlenecek dergi politikasını veya metnini giriniz.");
+        return;
+    }
+
+    const journalId = document.getElementById('journal-select').value || null;
+    const selectedIndices = Array.from(document.querySelectorAll('input[name="index_opt"]:checked')).map(cb => cb.value);
+
+    document.getElementById('loading-spinner').classList.remove('hidden');
+    document.getElementById('results-container').classList.add('hidden');
+
+    try {
+        const response = await fetch('/api/evaluate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                journal_id: journalId ? parseInt(journalId) : null,
+                raw_text: rawText,
+                indices: selectedIndices
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Analiz sırasında sunucu hatası oluştu.");
+        }
+
+        const data = await response.json();
+        currentResults = data;
+        renderResults(data);
+    } catch (err) {
+        alert(err.message);
+    } finally {
+        document.getElementById('loading-spinner').classList.add('hidden');
+        document.getElementById('results-container').classList.remove('hidden');
+    }
+}
+
+function renderResults(data) {
+    const avgScore = data.overall_summary.average_score;
+    document.getElementById('avg-score-badge').innerText = `%${avgScore}`;
+
+    // 1. İlerleme Çubukları
+    const barsContainer = document.getElementById('index-scores-bars');
+    barsContainer.innerHTML = '';
+    const indices = data.indices;
+
+    const radarLabels = [];
+    const radarScores = [];
+
+    Object.keys(indices).forEach(key => {
+        const idx = indices[key];
+        const score = idx.score_percentage;
+        radarLabels.push(idx.name.split(' ')[0]);
+        radarScores.push(score);
+
+        const isGood = score >= idx.min_pass_score;
+        const colorClass = isGood ? 'bg-emerald-500' : (score >= 50 ? 'bg-amber-500' : 'bg-rose-500');
+        const badgeClass = isGood ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-rose-700 bg-rose-50 border-rose-200';
+
+        const row = document.createElement('div');
+        row.className = "space-y-1.5";
+        row.innerHTML = `
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-800">${idx.name}</span>
+                <span class="px-2 py-0.5 rounded-full border text-[11px] font-bold ${badgeClass}">
+                    %${score} (${idx.passed_count}/${idx.total_count} Kriter)
+                </span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div class="${colorClass} h-2.5 rounded-full transition-all duration-700" style="width: ${score}%"></div>
+            </div>
+        `;
+        barsContainer.appendChild(row);
+    });
+
+    // 2. Radar Grafiği
+    renderRadarChart(radarLabels, radarScores);
+
+    // 3. Sekmeler (Tabs)
+    renderTabs(indices);
+}
+
+function renderRadarChart(labels, scores) {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    if (radarChartInstance) {
+        radarChartInstance.destroy();
+    }
+    radarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'İndeks Uygunluk %',
+                data: scores,
+                backgroundColor: 'rgba(14, 165, 233, 0.25)',
+                borderColor: '#0284c7',
+                borderWidth: 2,
+                pointBackgroundColor: '#0284c7',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#0284c7'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    ticks: { stepSize: 25, font: { size: 9 } }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+function renderTabs(indices) {
+    const tabsHeader = document.getElementById('index-tabs-header');
+    const tabsContent = document.getElementById('index-tabs-content');
+    tabsHeader.innerHTML = '';
+    tabsContent.innerHTML = '';
+
+    const keys = Object.keys(indices);
+    keys.forEach((key, index) => {
+        const idx = indices[key];
+        const isActive = index === 0;
+
+        // Sekme Butonu
+        const btn = document.createElement('button');
+        btn.className = `px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+            isActive ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'
+        }`;
+        btn.id = `tab-btn-${key}`;
+        btn.onclick = () => switchTab(key);
+        btn.innerHTML = `<span>${key.replace('_', ' ')}</span> <span class="text-[10px] opacity-80">(%${idx.score_percentage})</span>`;
+        tabsHeader.appendChild(btn);
+
+        // Sekme İçeriği
+        const pane = document.createElement('div');
+        pane.id = `tab-pane-${key}`;
+        pane.className = `${isActive ? 'block' : 'hidden'} space-y-4`;
+
+        let criteriaHtml = '';
+        idx.criteria_details.forEach(crit => {
+            const passIcon = crit.passed 
+                ? '<span class="text-emerald-600 bg-emerald-50 border border-emerald-200 p-1.5 rounded-lg text-xs"><i class="fa-solid fa-check"></i></span>'
+                : '<span class="text-rose-600 bg-rose-50 border border-rose-200 p-1.5 rounded-lg text-xs"><i class="fa-solid fa-xmark"></i></span>';
+
+            criteriaHtml += `
+                <div class="p-4 rounded-xl border ${crit.passed ? 'border-slate-200 bg-white' : 'border-rose-100 bg-rose-50/20'} space-y-2">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start space-x-3">
+                            ${passIcon}
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">${crit.title}</h4>
+                                <div class="text-[11px] text-slate-500 mt-0.5">Kategori: <span class="font-mono text-slate-700">${crit.category}</span> | Ağırlık: ${crit.weight} Puan</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-bold ${crit.passed ? 'text-emerald-600' : 'text-rose-600'}">%${crit.score_percentage}</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 rounded-lg p-2.5 text-[11px] text-slate-600 border border-slate-100">
+                        <span class="font-semibold text-slate-700">Metindeki Semantik Kanıt:</span>
+                        <p class="italic mt-0.5">${crit.evidence_snippet}</p>
+                    </div>
+                    ${!crit.passed ? `
+                    <div class="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200/60 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                        <span>${crit.recommendation}</span>
+                    </div>` : ''}
+                </div>
+            `;
+        });
+
+        pane.innerHTML = criteriaHtml;
+        tabsContent.appendChild(pane);
+    });
+}
+
+function switchTab(selectedKey) {
+    const allButtons = document.querySelectorAll('#index-tabs-header button');
+    allButtons.forEach(btn => {
+        btn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 text-slate-600 hover:bg-slate-200';
+    });
+    const activeBtn = document.getElementById(`tab-btn-${selectedKey}`);
+    if (activeBtn) {
+        activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-sky-600 text-white shadow-sm';
+    }
+
+    const allPanes = document.querySelectorAll('#index-tabs-content > div');
+    allPanes.forEach(p => p.classList.add('hidden'));
+    const activePane = document.getElementById(`tab-pane-${selectedKey}`);
+    if (activePane) {
+        activePane.classList.remove('hidden');
+    }
+}
+</script>
+{% endblock %}

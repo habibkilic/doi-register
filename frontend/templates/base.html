@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Akademik Dergi Denetim ve DOI Yönetim Portalı{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e3a8a',
+                        secondary: '#0284c7',
+                        accent: '#0d9488'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col font-sans">
+
+    <!-- ÜST NAVBAR -->
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="flex items-center space-x-3 text-white font-bold text-lg hover:text-sky-400 transition">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-book-bookmark text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="text-white text-lg font-black tracking-wide">AKADEMİK</span><span class="text-sky-400 font-light">DERGİ</span>
+                            <span class="text-xs block text-slate-400 font-normal">NLP & DOI Yönetim Portalı</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="/" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-sky-400 transition">
+                        <i class="fa-solid fa-chart-pie mr-1 text-slate-400"></i> Kontrol Paneli
+                    </a>
+                    <a href="/evaluate" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-sky-400 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-400"></i> İndeks & NLP Denetimi
+                    </a>
+                    <a href="/doi" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-sky-400 transition">
+                        <i class="fa-solid fa-fingerprint mr-1 text-emerald-400"></i> DOI Al & XML
+                    </a>
+                    <a href="/payment" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-sky-400 transition">
+                        <i class="fa-solid fa-coins mr-1 text-yellow-400"></i> Bakiye / Kredi
+                    </a>
+                    <a href="/tools" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-sky-400 transition">
+                        <i class="fa-solid fa-graduation-cap mr-1 text-rose-400"></i> Akademik Araçlar
+                    </a>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    {% if user %}
+                    <!-- Token Rozeti -->
+                    <a href="/payment" class="flex items-center bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-full text-amber-300 text-xs font-semibold hover:bg-amber-500/20 transition">
+                        <i class="fa-solid fa-coins text-amber-400 mr-1.5"></i>
+                        <span id="nav-token-balance">{{ user.token_balance }}</span> Kredi
+                    </a>
+
+                    <!-- Kullanıcı Bilgisi -->
+                    <div class="flex items-center space-x-2 text-sm text-slate-300 border-l border-slate-700 pl-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sky-400 font-semibold text-xs">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <div class="hidden sm:block text-left">
+                            <div class="font-bold text-xs text-slate-200 leading-tight">{{ user.name }}</div>
+                            <div class="text-[10px] text-slate-400">{{ user.academic_title }} • {{ user.institution }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Çıkış Yap Butonu -->
+                    <a href="/logout" title="Oturumu Kapat" class="text-slate-400 hover:text-rose-400 hover:bg-slate-800 p-2 rounded-xl transition text-xs flex items-center space-x-1">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span class="hidden md:inline">Çıkış</span>
+                    </a>
+                    {% else %}
+                    <a href="/login" class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                        Giriş Yap
+                    </a>
+                    <a href="/register" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                        Kayıt Ol
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ANA İÇERİK -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ALT BİLGİ (FOOTER) -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-certificate text-sky-600"></i>
+                <span class="font-medium text-slate-700">Akademik Dergi İndeks Denetim & DOI Otomasyon Platformu</span>
+            </div>
+            <div>
+                Desteklenen İndeksler: <span class="text-slate-700 font-semibold">DOAJ, TR Dizin, Scopus, Web of Science, Copernicus</span>
+            </div>
+            <div>
+                DOI Sağlayıcıları: <span class="text-slate-700 font-semibold">Crossref Sandbox & Zenodo REST API</span>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

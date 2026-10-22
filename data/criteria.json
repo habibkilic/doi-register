@@ -1,0 +1,302 @@
+{
+  "DOAJ": {
+    "name": "Directory of Open Access Journals (DOAJ)",
+    "description": "Açık erişim, şeffaflık, telif hakları ve hakemlik süreçleri odaklı uluslararası indeksleme kriterleri.",
+    "min_pass_score": 75,
+    "criteria": [
+      {
+        "id": "DOAJ_01",
+        "title": "Açık Erişim Bildirisi (Open Access Statement)",
+        "description": "Derginin tüm içeriklerinin kullanıcılara veya kurumlarına ücretsiz olarak sunulduğuna dair açık ve net bir açık erişim bildirimi olmalıdır (BOAI tanımına uygun).",
+        "category": "open_access",
+        "weight": 8,
+        "keywords": ["open access", "açık erişim", "free of charge", "ücretsiz erişim", "boai", "tam metin erişim", "unrestricted access"]
+      },
+      {
+        "id": "DOAJ_02",
+        "title": "Açık Lisanslama Politikası (Creative Commons)",
+        "description": "Makaleler için açık bir lisans (ör. CC-BY, CC-BY-SA, CC-BY-NC) açıkça web sitesinde ve yayınlanan makalelerde belirtilmelidir.",
+        "category": "licensing",
+        "weight": 8,
+        "keywords": ["creative commons", "cc-by", "cc by-nc", "lisans", "attribution", "telif lisansı", "open license"]
+      },
+      {
+        "id": "DOAJ_03",
+        "title": "Yazar Telif Hakkı Koruması (Copyright Retention)",
+        "description": "Yazarlar makalelerinin telif hakkını herhangi bir kısıtlama olmaksızın ellerinde tutabilmeli, münhasır hak devri zorunlu tutulmamalıdır.",
+        "category": "copyright",
+        "weight": 6,
+        "keywords": ["copyright retention", "telif hakkı", "yazara aittir", "authors retain copyright", "rights retained", "telif devri gerekmeksizin"]
+      },
+      {
+        "id": "DOAJ_04",
+        "title": "Hakem Değerlendirme Süreci Şeffaflığı (Peer Review)",
+        "description": "Tüm araştırma makaleleri en az çift taraflı kör (double-blind) veya açık (open) hakemlik sürecinden geçmeli ve bu süreç ayrıntılı açıklanmalıdır.",
+        "category": "peer_review",
+        "weight": 8,
+        "keywords": ["peer review", "hakemlik süreci", "çift kör", "double-blind", "kör hakemlik", "bağımsız hakem", "referee"]
+      },
+      {
+        "id": "DOAJ_05",
+        "title": "Asgari Araştırma Makalesi Sayısı (Yıllık Hacim)",
+        "description": "Başvuran derginin son bir yılda yayınlanmış en az 5 özgün araştırma makalesi bulunmalı ve arşivde eksiksiz yer almalıdır.",
+        "category": "volume",
+        "weight": 7,
+        "min_articles": 5,
+        "keywords": ["arşiv", "archive", "araştırma makalesi", "research article", "yayınlanmış makale", "current issue"]
+      },
+      {
+        "id": "DOAJ_06",
+        "title": "Yayın Etiği ve İntihal Politikası",
+        "description": "Yayın etiği ilkeleri (COPE standartları) ve benzerlik/intihal (plagiarism) denetim politikası açıkça sunulmalıdır.",
+        "category": "ethics",
+        "weight": 7,
+        "keywords": ["yayın etiği", "publication ethics", "intihal", "plagiarism", "cope", "benzerlik oranı", "turnitin", "ithenticate"]
+      },
+      {
+        "id": "DOAJ_07",
+        "title": "Makale İşlem Ücreti (APC) Şeffaflığı",
+        "description": "Derginin makale gönderme veya işlem ücreti (APC) alıp almadığı, alıyorsa net tutarı, almıyorsa ücret talep edilmediği açıkça belirtilmelidir.",
+        "category": "fees",
+        "weight": 5,
+        "keywords": ["apc", "article processing charge", "makale işlem ücreti", "ücretsizdir", "no fee", "ücret talep edilmez"]
+      },
+      {
+        "id": "DOAJ_08",
+        "title": "Editör Kurulu ve Akademik Çeşitlilik",
+        "description": "Editörler kurulu (Editorial Board) üyelerinin isimleri, unvanları ve kurumları (affiliations) açıkça listelenmelidir.",
+        "category": "editorial_board",
+        "weight": 6,
+        "keywords": ["editorial board", "editör kurulu", "baş editör", "editor-in-chief", "yayın kurulu", "affiliation", "kurum bilgisi"]
+      },
+      {
+        "id": "DOAJ_09",
+        "title": "Arşivleme ve Dijital Koruma Politikası",
+        "description": "Derginin uzun vadeli dijital arşivleme politikası (LOCKSS, CLOCKSS, Portico veya kurumsal arşivler) belirtilmelidir.",
+        "category": "archiving",
+        "weight": 5,
+        "keywords": ["archiving policy", "dijital koruma", "lockss", "clockss", "portico", "arşivleme politikası", "dergipark arşiv"]
+      }
+    ]
+  },
+  "TR_DIZIN": {
+    "name": "TR Dizin (TÜBİTAK ULAKBİM)",
+    "description": "TÜBİTAK ULAKBİM tarafından belirlenen ulusal akademik dergi değerlendirme ve dizinleme kriterleri.",
+    "min_pass_score": 75,
+    "criteria": [
+      {
+        "id": "TR_01",
+        "title": "Etik Kurul İzni ve Araştırma Etiği Beyanı",
+        "description": "İnsan ve hayvan denek içeren tüm araştırmalar için yetkili Etik Kurul Onay Belgesi (tarih ve sayı ile) alınması zorunludur ve makalede beyan edilmelidir.",
+        "category": "ethics",
+        "weight": 10,
+        "keywords": ["etik kurul izni", "ethics committee approval", "etik kurul kararı", "onay belgesi", "helsinki bildirgesi", "hayvan deneyleri etiği"]
+      },
+      {
+        "id": "TR_02",
+        "title": "Türkçe ve İngilizce Başlık, Özet ve Anahtar Kelimeler",
+        "description": "Tüm makalelerde hem Türkçe hem İngilizce başlık, özet ve anahtar kelimeler bulunmalıdır.",
+        "category": "structure",
+        "weight": 7,
+        "keywords": ["özet", "abstract", "anahtar kelimeler", "keywords", "türkçe özet", "ingilizce özet"]
+      },
+      {
+        "id": "TR_03",
+        "title": "Yayın Periyodu Düzenliliği (Yılda En Az 2 Sayı)",
+        "description": "Dergi yılda en az iki sayı halinde periyodik olarak ve ilan edilen takvime uygun yayınlanmalıdır.",
+        "category": "periodicity",
+        "weight": 8,
+        "keywords": ["yılda 2 sayı", "yayın periyodu", "bi-annual", "cilt", "sayı", "yayın takvimi", "düzenli yayın"]
+      },
+      {
+        "id": "TR_04",
+        "title": "Çift-Kör Hakemlik Sistemi (Double-Blind)",
+        "description": "Hakem ve yazar kimliklerinin gizli tutulduğu çift taraflı körleme hakemlik süreci işletilmelidir.",
+        "category": "peer_review",
+        "weight": 8,
+        "keywords": ["çift taraflı kör", "çift kör", "hakemlik", "bağımsız hakem", "hakem raporu", "en az iki hakem"]
+      },
+      {
+        "id": "TR_05",
+        "title": "İntihal Raporu ve Benzerlik Oranı Şartı",
+        "description": "Aday makaleler için intihal tespit programları (Turnitin, iThenticate, intihal.net) ile benzerlik taraması yapılması ve sınırın belirtilmesi şarttır.",
+        "category": "plagiarism",
+        "weight": 7,
+        "keywords": ["intihal", "benzerlik raporu", "ithenticate", "turnitin", "intihal.net", "benzerlik sınırı", "alıntı oranı"]
+      },
+      {
+        "id": "TR_06",
+        "title": "Çıkar Çatışması ve Yazar Katkı Oranı Beyanı",
+        "description": "Makale sonunda yazarların çıkar çatışması olmadığına dair beyanı ve yazarlık katkı oranları yer almalıdır.",
+        "category": "ethics",
+        "weight": 6,
+        "keywords": ["çıkar çatışması", "conflict of interest", "yazar katkısı", "author contributions", "finansal destek beyanı"]
+      },
+      {
+        "id": "TR_07",
+        "title": "Kaynakça Standardı ve Metin İçi Atıf Tutarlılığı",
+        "description": "Kaynakça standart bir stile (APA, IEEE, Vancouver vb.) uygun ve makale içindeki atıflarla birebir eşleşir olmalıdır.",
+        "category": "references",
+        "weight": 6,
+        "keywords": ["kaynakça", "references", "apa", "ieee", "vancouver", "atıf formatı", "metin içi atıf"]
+      }
+    ]
+  },
+  "SCOPUS": {
+    "name": "Scopus (Elsevier CSAB)",
+    "description": "Elsevier İçerik Seçim ve Danışma Kurulu (CSAB) tarafından uygulanan uluslararası dergi kabul kriterleri.",
+    "min_pass_score": 70,
+    "criteria": [
+      {
+        "id": "SCOPUS_01",
+        "title": "İkna Edici Yayın Politikası ve Amaç & Kapsam",
+        "description": "Derginin açıkça tanımlanmış, uluslararası akademik katkı vadeden bir Amaç ve Kapsam (Aims & Scope) sayfası bulunmalıdır.",
+        "category": "editorial_scope",
+        "weight": 8,
+        "keywords": ["aims and scope", "amaç ve kapsam", "yayın politikası", "editorial policy", "scholarly contribution"]
+      },
+      {
+        "id": "SCOPUS_02",
+        "title": "Yayın Etiği ve Kötüye Kullanım Beyanı (COPE)",
+        "description": "COPE (Committee on Publication Ethics) ilkelerine tam uyumlu ve kapsamlı etik kurallar yer almalıdır.",
+        "category": "ethics",
+        "weight": 8,
+        "keywords": ["cope", "committee on publication ethics", "malpractice statement", "publication ethics", "retraction policy"]
+      },
+      {
+        "id": "SCOPUS_03",
+        "title": "Uluslararası Editör Kurulu ve Yazar Çeşitliliği",
+        "description": "Editör kurulu ve yayınlanan makale yazarları farklı ülkelerden ve kurumlardan gelen uluslararası çeşitliliğe sahip olmalıdır.",
+        "category": "editorial_board",
+        "weight": 8,
+        "keywords": ["international editorial board", "uluslararası yayın kurulu", "geographic diversity", "global contributors", "editorial diversity"]
+      },
+      {
+        "id": "SCOPUS_04",
+        "title": "İngilizce Başlık, Özet ve Roman Alfabesiyle Kaynakça",
+        "description": "Yayın dili ne olursa olsun tüm makalelerde akıcı İngilizce başlık, özet ve Latin/Roman alfabesiyle hazırlanmış kaynakça zorunludur.",
+        "category": "structure",
+        "weight": 8,
+        "keywords": ["english abstract", "roman alphabet references", "english title", "latin characters", "international readability"]
+      },
+      {
+        "id": "SCOPUS_05",
+        "title": "Yayın Takvimine Kesin Bağlılık (Düzenlilik)",
+        "description": "Dergi ilan ettiği yayın aralıklarına (örn. 3 ayda bir) gecikme olmaksızın tam uymuş olmalıdır.",
+        "category": "periodicity",
+        "weight": 7,
+        "keywords": ["publication regularity", "yayın düzeni", "no delay", "timely publication", "scheduled issues"]
+      },
+      {
+        "id": "SCOPUS_06",
+        "title": "Çevrimiçi Erişilebilirlik ve İngilizce Web Arayüzü",
+        "description": "Dergi ana sayfası profesyonel, teknik olarak sorunsuz ve İngilizce arayüz seçeneği sunmalıdır.",
+        "category": "website",
+        "weight": 6,
+        "keywords": ["english homepage", "homepage quality", "online availability", "navigation", "user interface"]
+      }
+    ]
+  },
+  "WEB_OF_SCIENCE": {
+    "name": "Web of Science (Clarivate Core Collection)",
+    "description": "Clarivate tarafından uygulanan 24 temel Kalite Kriteri (Quality Criteria) değerlendirme standartları.",
+    "min_pass_score": 70,
+    "criteria": [
+      {
+        "id": "WOS_01",
+        "title": "Kayıtlı ISSN ve Doğrulanmış Dergi Kimliği",
+        "description": "Derginin ISSN Uluslararası Merkezi tarafından tescil edilmiş geçerli bir basılı ve/veya e-ISSN numarası bulunmalıdır.",
+        "category": "identity",
+        "weight": 8,
+        "keywords": ["issn", "e-issn", "issn portal", "dergi kimliği", "registered issn", "international standard serial number"]
+      },
+      {
+        "id": "WOS_02",
+        "title": "Tüm Makalelerde Kalıcı DOI Ataması",
+        "description": "Yayınlanan her araştırma makalesine benzersiz, tıklanabilir ve tescilli bir DOI numarası verilmiş olmalıdır.",
+        "category": "doi",
+        "weight": 9,
+        "keywords": ["doi", "digital object identifier", "crossref", "kalıcı bağlantı", "doi numarası", "10."]
+      },
+      {
+        "id": "WOS_03",
+        "title": "Yazar Kurum ve İletişim Bilgileri (Affiliation & ORCID)",
+        "description": "Her yazar için net kurum adı (Affiliation), ülke, e-posta adresi ve doğrulanabilir ORCID kimliği bulunmalıdır.",
+        "category": "authorship",
+        "weight": 7,
+        "keywords": ["orcid", "affiliation", "kurum", "corresponding author", "iletişim yazarı", "author address"]
+      },
+      {
+        "id": "WOS_04",
+        "title": "Web Sitesi İşlevselliği ve Şeffaf İletişim",
+        "description": "Derginin yayıncısı, açık fiziksel adresi, kurumsal e-posta adresi ve teknik olarak hatasız çalışan bir web sitesi olmalıdır.",
+        "category": "website",
+        "weight": 7,
+        "keywords": ["publisher", "yayıncı", "contact information", "iletişim adresi", "website functionality", "editorial office"]
+      },
+      {
+        "id": "WOS_05",
+        "title": "Özgünlük ve Akademik İçerik Niteliği",
+        "description": "Yayınlanan içeriklerin ağırlıklı olarak özgün araştırma makalesi olması ve bilimsel alana metodolojik katkı sunması gereklidir.",
+        "category": "content_quality",
+        "weight": 8,
+        "keywords": ["original research", "özgün araştırma", "methodology", "bilimsel katkı", "scholarly relevance"]
+      },
+      {
+        "id": "WOS_06",
+        "title": "Hakem Değerlendirmesi ve Editoryal İnceleme Şeffaflığı",
+        "description": "Dergi makale kabul ve ret oranlarını, inceleme sürelerini ve hakem değerlendirme politikalarını şeffaf kılmalıdır.",
+        "category": "peer_review",
+        "weight": 7,
+        "keywords": ["editorial scrutiny", "peer review rigor", "acceptance rate", "review timeline", "editorial rigor"]
+      }
+    ]
+  },
+  "COPERNICUS": {
+    "name": "Index Copernicus (ICI Journals Master List)",
+    "description": "Index Copernicus Uluslararası Uzman Paneli tarafından uygulanan parametrik dergi değerlendirme standartları.",
+    "min_pass_score": 65,
+    "criteria": [
+      {
+        "id": "ICI_01",
+        "title": "Dijitalleşme ve Çevrimiçi Arşiv Erişimi",
+        "description": "Makalelerin tam metinlerine PDF formatında kolayca, kesintisiz ve ücretsiz/kurallı erişim sağlanmalıdır.",
+        "category": "digitization",
+        "weight": 8,
+        "keywords": ["pdf tam metin", "full text pdf", "dijital arşiv", "online access", "sayısallaştırma", "arşiv erişimi"]
+      },
+      {
+        "id": "ICI_02",
+        "title": "Makale Düzeyinde DOI Desteği",
+        "description": "Tüm makalelerin Crossref veya DataCite/Zenodo tabanlı DOI kimliklerine sahip olması puan kazandırır.",
+        "category": "doi",
+        "weight": 8,
+        "keywords": ["doi", "crossref", "zenodo", "datacite", "kalıcı nesne tanımlayıcı", "doi link"]
+      },
+      {
+        "id": "ICI_03",
+        "title": "Mizanpaj ve Uluslararası Tipografi Standartları",
+        "description": "Makalelerin profesyonel bir sayfa tasarımına, sayfa numaralandırmasına, tablo ve şekil formatına sahip olması gerekir.",
+        "category": "layout",
+        "weight": 6,
+        "keywords": ["mizanpaj", "layout", "tipografi", "sayfa düzeni", "page numbers", "formatting template"]
+      },
+      {
+        "id": "ICI_04",
+        "title": "Çevrimiçi Editoryal Yönetim Sistemi Altyapısı",
+        "description": "Derginin e-posta üzerinden değil, çevrimiçi makale gönderme, hakem atama ve takip sistemi (OJS, DergiPark vb.) kullanması.",
+        "category": "submission_system",
+        "weight": 7,
+        "keywords": ["online submission", "ojs", "dergipark", "editoryal yönetim", "makale takip sistemi", "submission system"]
+      },
+      {
+        "id": "ICI_05",
+        "title": "İki Dilde Bilimsel Künye",
+        "description": "Makalenin yerel dilin yanında İngilizce metaverilerinin (başlık, özet, anahtar kelimeler) eksiksiz olması.",
+        "category": "structure",
+        "weight": 6,
+        "keywords": ["bilingual metadata", "ingilizce künye", "abstract and keywords", "iki dilli", "english title"]
+      }
+    ]
+  }
+}

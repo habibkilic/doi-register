@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+python-multipart
+requests
+scikit-learn
+numpy
+jinja2
+python-docx
+beautifulsoup4
+lxml
+pytest
+aiofiles

@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Akademik Araçlar & Kaynakça Denetimi - Akademik Dergi Portalı{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- BAŞLIK & BİLGİLENDİRME KARTI -->
+    <div class="bg-gradient-to-r from-rose-900 via-slate-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <div class="inline-flex items-center space-x-2 bg-rose-500/20 border border-rose-400/30 px-3 py-1 rounded-full text-rose-300 text-xs font-semibold mb-2">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Akademisyen ve Editör Destek Modülü</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Akademik Araçlar & Kaynakça Denetimi</h1>
+            <p class="text-slate-300 text-sm mt-1 max-w-2xl leading-relaxed">
+                Makalelerinizdeki kaynakçaları <span class="text-emerald-400 font-semibold">Crossref API</span> ile canlı tarayarak eksik DOI'leri bulun, atıf doğruluğunu denetleyin ve güncel <span class="text-rose-300 font-semibold">ÜAK Doçentlik / Teşvik</span> puanlarınızı hesaplayın.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0">
+            <button onclick="switchToolTab('ref')" id="btn-tab-ref" class="bg-white text-slate-900 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2">
+                <i class="fa-solid fa-book-bookmark text-rose-600"></i>
+                <span>Kaynakça & DOI Bulucu</span>
+            </button>
+            <button onclick="switchToolTab('uak')" id="btn-tab-uak" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2">
+                <i class="fa-solid fa-calculator text-amber-400"></i>
+                <span>ÜAK Doçentlik & Teşvik</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. BÖLÜM: KAYNAKÇA & CROSSREF DOI ÇÖZÜCÜ -->
+    <div id="section-ref" class="space-y-6">
+        
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-magnifying-glass-chart text-rose-600"></i>
+                        <span>Kaynakça Listesi Doğrulama & Eksik DOI Çözücü</span>
+                    </h2>
+                    <p class="text-xs text-slate-500">Her satıra bir kaynakça gelecek şekilde makalenizin kaynaklarını yapıştırınız.</p>
+                </div>
+                <button onclick="loadSampleReferences()" class="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition border border-rose-200">
+                    Örnek Kaynakça Listesi Yükle
+                </button>
+            </div>
+
+            <textarea id="raw-references-input" rows="7" placeholder="[1] Yılmaz, A. (2023). Yapay zeka uygulamaları. Fen Bilimleri Dergisi...&#10;[2] Smith, J. (2022). Deep learning in medicine. Nature Medicine..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-rose-500 leading-relaxed"></textarea>
+
+            <div class="flex justify-between items-center pt-2">
+                <span class="text-[11px] text-slate-400">Canlı Crossref API sorgusu yapılacaktır.</span>
+                <button onclick="checkReferences()" id="btn-check-refs" class="bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-rose-600/20 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Crossref ile Doğrula ve Eksik DOI'leri Bul</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SONUÇLAR VE İSTATİSTİK ALANI -->
+        <div id="ref-results-box" class="hidden space-y-6">
+            
+            <!-- ÖZET SAYAÇLAR -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <div class="text-[11px] font-semibold text-slate-400 uppercase">Toplam Kaynak</div>
+                    <div class="text-2xl font-black text-slate-900 mt-1" id="stat-total-cits">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <div class="text-[11px] font-semibold text-slate-400 uppercase">Doğrulanan Kayıt</div>
+                    <div class="text-2xl font-black text-emerald-600 mt-1" id="stat-verified-cits">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <div class="text-[11px] font-semibold text-slate-400 uppercase">Eksik DOI Bulundu</div>
+                    <div class="text-2xl font-black text-sky-600 mt-1" id="stat-found-dois">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <div class="text-[11px] font-semibold text-slate-400 uppercase">Doğruluk Oranı</div>
+                    <div class="text-2xl font-black text-rose-600 mt-1" id="stat-accuracy-cits">%0</div>
+                </div>
+            </div>
+
+            <!-- TEKİL KAYNAKÇA LİSTESİ TABLOSU -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">İncelenen Kaynakçalar ve Atanan DOI Bağlantıları</h3>
+                    <button onclick="copyAllFormattedApa()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-copy text-slate-500"></i>
+                        <span>APA 7 Kaynakçayı Kopyala</span>
+                    </button>
+                </div>
+                <div class="divide-y divide-slate-100" id="citations-list-container">
+                    <!-- Dinamik doldurulacak -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 2. BÖLÜM: ÜAK DOÇENTLİK VE AKADEMİK TEŞVİK HESAPLAYICI -->
+    <div id="section-uak" class="hidden space-y-6">
+        
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-calculator text-amber-500"></i>
+                    <span>ÜAK Doçentlik Kriteri & Akademik Teşvik Puanı Hesaplayıcı</span>
+                </h2>
+                <p class="text-xs text-slate-500">YÖK ve Üniversitelerarası Kurul güncel doçentlik mevzuatına göre yayınınızın puan karşılığını hesaplayın.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Sol Kolon: Seçim Formu -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Yayın İndeksi Türü</label>
+                        <select id="uak-index-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500" onchange="calculateUakScore()">
+                            <option value="WOS_Q1">Web of Science (SCI/SSCI/AHCI) - Q1 (30 Puan)</option>
+                            <option value="WOS_Q2">Web of Science (SCI/SSCI/AHCI) - Q2 (20 Puan)</option>
+                            <option value="WOS_Q3">Web of Science (SCI/SSCI/AHCI) - Q3 (15 Puan)</option>
+                            <option value="WOS_Q4_ESCI">Web of Science (Q4) veya ESCI (10 Puan)</option>
+                            <option value="SCOPUS">Scopus / Uluslararası Alan İndeksi (10 Puan)</option>
+                            <option value="TR_DIZIN" selected>TR Dizin (TÜBİTAK ULAKBİM) (10 Puan)</option>
+                            <option value="OTHER_REFEREED">Diğer Hakemli Dergi (4 Puan)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Toplam Yazar Sayısı</label>
+                            <input type="number" id="uak-author-count" value="2" min="1" max="20" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900" onchange="calculateUakScore()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Yazar Sıranız</label>
+                            <input type="number" id="uak-author-order" value="1" min="1" max="20" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900" onchange="calculateUakScore()">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 pt-2">
+                        <input type="checkbox" id="uak-is-corresponding" class="rounded text-amber-500 focus:ring-amber-500" onchange="calculateUakScore()">
+                        <label for="uak-is-corresponding" class="text-xs font-semibold text-slate-700 cursor-pointer">
+                            Sorumlu Yazarım (Corresponding Author)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sağ Kolon: Hesaplanan Puan Kartı -->
+                <div class="bg-gradient-to-br from-amber-50/50 via-slate-50 to-indigo-50/50 rounded-2xl border border-amber-200/60 p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase text-amber-700 tracking-wider">Hesaplama Özeti</div>
+                        <h4 class="text-sm font-bold text-slate-900 mt-1" id="uak-summary-title">TR Dizin (TÜBİTAK ULAKBİM)</h4>
+                        <div class="text-xs text-slate-500 mt-0.5" id="uak-summary-role">Başyazar / Sorumlu Yazar (%80 Pay)</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 border-y border-amber-200/40 py-4">
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">ÜAK Doçentlik Puanı</div>
+                            <div class="text-3xl font-black text-slate-900" id="uak-points-display">8.00</div>
+                            <div class="text-[10px] text-slate-500">Ham: 10 Puan</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">YÖK Teşvik Puanı</div>
+                            <div class="text-3xl font-black text-amber-600" id="incentive-points-display">8.49</div>
+                            <div class="text-[10px] text-slate-500">Ham: 12.0 Puan</div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs bg-white/80 rounded-xl p-3 border border-amber-200 text-slate-700" id="uak-evaluation-note">
+                        ✅ Bu yayın ÜAK Doçentlik asgari başvuru şartlarında (Madde 1/a veya 1/b) doğrudan geçerlidir.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let lastFormattedCitations = [];
+
+function switchToolTab(tab) {
+    const secRef = document.getElementById('section-ref');
+    const secUak = document.getElementById('section-uak');
+    const btnRef = document.getElementById('btn-tab-ref');
+    const btnUak = document.getElementById('btn-tab-uak');
+
+    if (tab === 'ref') {
+        secRef.classList.remove('hidden');
+        secUak.classList.add('hidden');
+        btnRef.className = "bg-white text-slate-900 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2";
+        btnUak.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2";
+    } else {
+        secRef.classList.add('hidden');
+        secUak.classList.remove('hidden');
+        btnUak.className = "bg-white text-slate-900 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition flex items-center space-x-2";
+        btnRef.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2";
+        calculateUakScore();
+    }
+}
+
+function loadSampleReferences() {
+    const sample = `[1] Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., & Polosukhin, I. (2017). Attention is all you need. Advances in Neural Information Processing Systems.
+[2] Devlin, J., Chang, M. W., Lee, K., & Toutanova, K. (2018). BERT: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805.
+[3] LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436-444.
+[4] Kaya, Z., & Demir, M. (2026). Akademik dergi denetim sistemleri. Uluslararası Fen Dergisi. https://doi.org/10.55555/ufmad.2026.12.2.001`;
+
+    document.getElementById('raw-references-input').value = sample;
+}
+
+async function checkReferences() {
+    const rawText = document.getElementById('raw-references-input').value.trim();
+    if (!rawText) {
+        alert("Lütfen denetlenecek kaynakça metnini giriniz.");
+        return;
+    }
+
+    const btn = document.getElementById('btn-check-refs');
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Crossref API Taranıyor...</span>`;
+
+    try {
+        const response = await fetch('/api/references/check', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ raw_references: rawText })
+        });
+
+        const data = await response.json();
+        renderReferenceResults(data);
+    } catch (err) {
+        alert("Kaynaklar taranırken hata: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> <span>Crossref ile Doğrula ve Eksik DOI'leri Bul</span>`;
+    }
+}
+
+function renderReferenceResults(data) {
+    document.getElementById('ref-results-box').classList.remove('hidden');
+    document.getElementById('stat-total-cits').innerText = data.total_citations;
+    document.getElementById('stat-verified-cits').innerText = data.verified_count;
+    document.getElementById('stat-found-dois').innerText = data.missing_dois_resolved;
+    document.getElementById('stat-accuracy-cits').innerText = `%${data.accuracy_rate}`;
+
+    const list = document.getElementById('citations-list-container');
+    list.innerHTML = '';
+    lastFormattedCitations = [];
+
+    data.citations.forEach((c, idx) => {
+        lastFormattedCitations.push(c.apa_formatted);
+        const isVerified = c.status === "verified";
+        const foundNewDoi = !c.had_doi_originally && c.resolved_doi;
+
+        const row = document.createElement('div');
+        row.className = "p-4 hover:bg-slate-50 transition space-y-2 text-xs";
+        row.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                    <div class="font-medium text-slate-800">${idx + 1}. ${c.original_text}</div>
+                    <div class="flex flex-wrap items-center gap-2 pt-1">
+                        ${isVerified ? `
+                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-check"></i> <span>Doğrulandı (${c.matched_journal || 'Crossref'})</span>
+                            </span>
+                        ` : `
+                            <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">Doğrulanamadı</span>
+                        `}
+
+                        ${foundNewDoi ? `
+                            <span class="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-plus text-sky-500"></i> <span>Eksik DOI Çözüldü: ${c.resolved_doi}</span>
+                            </span>
+                        ` : ''}
+
+                        ${c.had_doi_originally ? `
+                            <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-mono">Orijinal DOI Mevcut</span>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="shrink-0 text-right">
+                    ${c.doi_url ? `
+                        <a href="${c.doi_url}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold transition inline-flex items-center space-x-1">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                            <span>DOI Linki</span>
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 text-[11px] text-slate-600">
+                <span class="font-bold text-slate-700">Düzeltilmiş APA 7:</span> ${c.apa_formatted}
+            </div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function copyAllFormattedApa() {
+    if (lastFormattedCitations.length === 0) return;
+    const textToCopy = lastFormattedCitations.join('\n\n');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        alert("Tüm APA 7 formatındaki kaynakça panoya kopyalandı!");
+    });
+}
+
+async function calculateUakScore() {
+    const indexType = document.getElementById('uak-index-type').value;
+    const authorCount = parseInt(document.getElementById('uak-author-count').value) || 1;
+    const authorOrder = parseInt(document.getElementById('uak-author-order').value) || 1;
+    const isCorresponding = document.getElementById('uak-is-corresponding').checked;
+
+    try {
+        const response = await fetch('/api/academic/calculate-score', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                index_type: indexType,
+                author_count: authorCount,
+                author_order: authorOrder,
+                is_corresponding: isCorresponding
+            })
+        });
+
+        const data = await response.json();
+        document.getElementById('uak-summary-title').innerText = data.index_name;
+        document.getElementById('uak-summary-role').innerText = data.author_role;
+        document.getElementById('uak-points-display').innerText = data.calculated_uak_points.toFixed(2);
+        document.getElementById('incentive-points-display').innerText = data.calculated_incentive_points.toFixed(2);
+        document.getElementById('uak-evaluation-note').innerText = data.evaluation_note;
+    } catch (err) {
+        console.error("Puan hesaplama hatası:", err);
+    }
+}
+</script>
+{% endblock %}

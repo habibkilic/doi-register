@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Bakiye & Kredi Satın Al - Akademik Dergi Portalı{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- BAŞLIK -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center space-x-2 bg-yellow-500/10 border border-yellow-500/30 px-3 py-1 rounded-full text-yellow-700 text-xs font-semibold mb-2">
+                <i class="fa-solid fa-coins"></i>
+                <span>SaaS Ticari Bakiye & Lisans Modülü</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">DOI Kredisi & Bakiye Yükleme</h1>
+            <p class="text-slate-500 text-sm mt-1">
+                Crossref ve Zenodo DOI atamaları için gereken kredileri iyzico Sandbox güvencesiyle veya Banka Havalesi/EFT ile yükleyin.
+            </p>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Mevcut Bakiyeniz</div>
+                <div class="text-xl font-black text-slate-900">{{ user.token_balance }} DOI Kredisi</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KREDİ PAKETLERİ -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for pkg in packages %}
+        <div class="bg-white rounded-2xl border {% if pkg.id == 'pack_10' %}border-sky-500 ring-2 ring-sky-500/20 shadow-md relative{% else %}border-slate-200/80 shadow-sm{% endif %} p-6 flex flex-col justify-between space-y-6">
+            {% if pkg.id == 'pack_10' %}
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                En Çok Tercih Edilen
+            </div>
+            {% endif %}
+
+            <div>
+                <h3 class="text-base font-bold text-slate-900">{{ pkg.name }}</h3>
+                <div class="mt-4 flex items-baseline space-x-1">
+                    <span class="text-3xl font-black text-slate-900">{{ pkg.price_try|int }} TL</span>
+                    <span class="text-xs text-slate-400">/ {{ pkg.price }}$</span>
+                </div>
+                <div class="mt-2 text-xs font-semibold text-sky-600">
+                    {{ pkg.tokens }} Adet Makale DOI Lisansı
+                </div>
+
+                <ul class="mt-6 space-y-2.5 text-xs text-slate-600">
+                    <li class="flex items-center space-x-2">
+                        <i class="fa-solid fa-check text-emerald-500 text-[11px]"></i>
+                        <span>Crossref Sandbox Testbed Desteği</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <i class="fa-solid fa-check text-emerald-500 text-[11px]"></i>
+                        <span>Zenodo REST API Canlı Entegrasyon</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <i class="fa-solid fa-check text-emerald-500 text-[11px]"></i>
+                        <span>Toplu ve Tekli DOI Üretimi</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <i class="fa-solid fa-check text-emerald-500 text-[11px]"></i>
+                        <span>PDF Tescil Belgesi ve QR Doğrulama</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button onclick="selectPackage('{{ pkg.id }}', '{{ pkg.name }}', {{ pkg.price_try|int }}, {{ pkg.tokens }})" class="w-full {% if pkg.id == 'pack_10' %}bg-sky-600 hover:bg-sky-700 text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-800{% endif %} py-2.5 rounded-xl font-bold text-xs transition text-center shadow-sm">
+                Bu Paketi Seç
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ÖDEME FORMU ALANI -->
+    <div id="payment-checkout-section" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
+        <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-credit-card text-sky-600"></i>
+                    <span>Güvenli Ödeme Adımı</span>
+                </h2>
+                <p class="text-xs text-slate-500" id="selected-pkg-summary">Lütfen yukarıdan bir paket seçiniz.</p>
+            </div>
+
+            <!-- Ödeme Türü Seçici -->
+            <div class="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                <button onclick="switchPaymentMethod('card')" id="btn-method-card" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition">
+                    <i class="fa-solid fa-credit-card mr-1 text-sky-600"></i> iyzico Kredi Kartı
+                </button>
+                <button onclick="switchPaymentMethod('wire')" id="btn-method-wire" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+                    <i class="fa-solid fa-building-columns mr-1 text-amber-600"></i> Havale / EFT
+                </button>
+            </div>
+        </div>
+
+        <!-- SEÇENEK A: IYZICO KREDİ KARTI FORMU -->
+        <div id="method-card-box" class="space-y-4 max-w-xl">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold text-slate-500">Test Kartı ile Hızlı Doldur:</span>
+                <button onclick="fillTestCard()" class="text-xs font-bold text-sky-600 hover:underline">
+                    Test Kartı Bilgilerini Yapıştır
+                </button>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Kart Sahibinin Adı Soyadı</label>
+                <input type="text" id="card-holder" placeholder="Ad Soyad" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Kart Numarası</label>
+                <input type="text" id="card-number" placeholder="5890 0400 0000 0016" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-sky-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Son Kullanma (AA/YY)</label>
+                    <input type="text" id="card-expiry" placeholder="12/28" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">CVV Güvenlik Kodu</label>
+                    <input type="text" id="card-cvv" placeholder="123" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <button onclick="submitCardPayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-lock text-sm"></i>
+                <span id="btn-card-pay-label">Ödemeyi Tamamla ve Krediyi Yükle</span>
+            </button>
+        </div>
+
+        <!-- SEÇENEK B: BANKA HAVALESİ / EFT -->
+        <div id="method-wire-box" class="hidden space-y-4 max-w-xl">
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs space-y-3">
+                <div class="font-bold text-slate-800">Lütfen aşağıdaki hesaba ödemeyi gerçekleştiriniz:</div>
+                {% for acc in bank_accounts %}
+                <div class="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
+                    <div class="font-bold text-slate-900">{{ acc.bank }}</div>
+                    <div class="font-mono text-slate-700 text-xs select-all">{{ acc.iban }}</div>
+                    <div class="text-slate-500 text-[11px]">Alıcı: {{ acc.holder }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Gönderen Adı Soyadı</label>
+                <input type="text" id="wire-sender" placeholder="Havale dekontundaki isim" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-sky-500">
+            </div>
+
+            <button onclick="submitWirePayment()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-amber-600/20 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+                <span>Havale Bildirimi Yap</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- GEÇMİŞ İŞLEMLER TABLOSU -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <i class="fa-solid fa-receipt text-slate-600"></i>
+                <span>Ödeme ve Bakiye Geçmişi</span>
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-3.5">Referans Kodu</th>
+                        <th class="px-6 py-3.5">Yüklenen Kredi</th>
+                        <th class="px-6 py-3.5">Tutar</th>
+                        <th class="px-6 py-3.5">Ödeme Yolu</th>
+                        <th class="px-6 py-3.5">Tarih</th>
+                        <th class="px-6 py-3.5">Durum</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    {% for tx in transactions %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="px-6 py-3.5 font-mono font-bold text-slate-800">{{ tx.reference_code }}</td>
+                        <td class="px-6 py-3.5 font-bold text-emerald-600">+{{ tx.tokens }} Kredi</td>
+                        <td class="px-6 py-3.5">{{ tx.amount_paid }} {{ tx.currency }}</td>
+                        <td class="px-6 py-3.5 font-medium">
+                            {% if tx.payment_method == 'iyzico_card' %}
+                            <span class="text-sky-700 bg-sky-50 px-2 py-0.5 rounded">iyzico Kart</span>
+                            {% else %}
+                            <span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Havale / EFT</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3.5 text-slate-500">{{ tx.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td class="px-6 py-3.5">
+                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                Tamamlandı
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-400">Henüz bir ödeme kaydı bulunmamaktadır.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSelectedPackageId = "pack_10";
+let currentSelectedPrice = 800;
+
+function selectPackage(id, name, price, tokens) {
+    currentSelectedPackageId = id;
+    currentSelectedPrice = price;
+    document.getElementById('selected-pkg-summary').innerText = `Seçilen: ${name} (${tokens} Kredi) - Toplam: ${price} TL`;
+    document.getElementById('btn-card-pay-label').innerText = `${price} TL Öde ve Krediyi Yükle`;
+    document.getElementById('payment-checkout-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Varsayılan paketi seç
+selectPackage('pack_10', 'Standart Dergi Paketi', 800, 10);
+
+function switchPaymentMethod(method) {
+    const cardBox = document.getElementById('method-card-box');
+    const wireBox = document.getElementById('method-wire-box');
+    const btnCard = document.getElementById('btn-method-card');
+    const btnWire = document.getElementById('btn-method-wire');
+
+    if (method === 'card') {
+        cardBox.classList.remove('hidden');
+        wireBox.classList.add('hidden');
+        btnCard.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition";
+        btnWire.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+    } else {
+        cardBox.classList.add('hidden');
+        wireBox.classList.remove('hidden');
+        btnWire.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition";
+        btnCard.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+    }
+}
+
+function fillTestCard() {
+    document.getElementById('card-holder').value = "Prof. Dr. Ahmet Yılmaz";
+    document.getElementById('card-number').value = "5890 0400 0000 0016";
+    document.getElementById('card-expiry').value = "12/28";
+    document.getElementById('card-cvv').value = "123";
+}
+
+async function submitCardPayment() {
+    const holder = document.getElementById('card-holder').value.trim();
+    const number = document.getElementById('card-number').value.trim();
+    const expiry = document.getElementById('card-expiry').value.trim();
+    const cvv = document.getElementById('card-cvv').value.trim();
+
+    if (!holder || !number || !expiry || !cvv) {
+        alert("Lütfen tüm kart alanlarını doldurunuz.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/payment/card', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                package_id: currentSelectedPackageId,
+                card_holder: holder,
+                card_number: number,
+                expiry: expiry,
+                cvv: cvv
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || "Ödeme onaylanamadı.");
+        }
+
+        alert(`Ödeme Başarılı!\n${data.message}\nReferans: ${data.reference_code}\nYeni Bakiye: ${data.new_balance} Kredi`);
+        window.location.reload();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+async function submitWirePayment() {
+    const sender = document.getElementById('wire-sender').value.trim();
+    if (!sender) {
+        alert("Lütfen gönderen adını giriniz.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/payment/wire', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                package_id: currentSelectedPackageId,
+                sender_name: sender
+            })
+        });
+
+        const data = await response.json();
+        alert(`Havale Bildirimi Alındı!\nReferans Kodunuz: ${data.reference_code}\nLütfen dekont açıklamanıza bu referans kodunu yazınız.`);
+        window.location.reload();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+</script>
+{% endblock %}
